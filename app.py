@@ -43,6 +43,19 @@ def check_password():
         # Correct credentials provided
         return True
 
+# ==========================================
+# 🚨 ALERT WEBHOOK & ESCALATION FUNCTIONS
+# ==========================================
+def send_slack_alert(issue_id, category, text):
+    """Pings the Corporate Communications Slack channel."""
+    # Production: requests.post(st.secrets["SLACK_WEBHOOK"], json={"text": payload})
+    st.toast(f"🚨 ALERT DISPATCHED: Slack channel #pr-crisis notified for Issue #{issue_id}!")
+
+def send_whatsapp_alert(issue_id, score):
+    """Pings the on-call Nodal Officer's mobile device via WhatsApp."""
+    # Production: requests.post("https://graph.facebook.com/v17.0/.../messages", ...)
+    st.toast(f"📱 ESCALATED: WhatsApp ping sent to Nodal Officer for Risk Level {score}!")
+
 # Trigger password security firewall check
 if check_password():
     # 1. Your Cloud Database Coordinates
@@ -69,7 +82,7 @@ if check_password():
     except Exception as e:
         pass
 
-    # Fallback mock data setup if cloud database returns empty
+    # Fallback mock data setup with Expanded Fintech / UPI Schema Data
     if not records or isinstance(records, dict):
         records = [
             {
@@ -113,6 +126,34 @@ if check_password():
                 "suggested_action": "Send automated loyalty discount point token.",
                 "draft_reply_english": "Thank you for the wonderful feedback! Happy to serve you.",
                 "draft_reply_hindi": "शानदार प्रतिक्रिया के लिए धन्यवाद! आपकी सेवा करके हमें खुशी हुई।"
+            },
+            {
+                "id": 4,
+                "created_at": "2026-09-06T16:05:00Z",
+                "user_name": "Rahul Verma",
+                "review_text": "I tried to pay my electricity bill via UPI. The app crashed, ₹4,500 got deducted from my HDFC bank, but the bill is still showing unpaid! Customer care is unreachable. I need my refund NOW!!",
+                "rating": 1,
+                "category": "Fintech / UPI Failure",
+                "sub_category": "Amount Deducted - Merchant Not Credited",
+                "urgency_score": 9.5,
+                "sentiment": "Extreme Panic & Anger",
+                "suggested_action": "Query NPCI / Bank Switch API for transaction status. Auto-trigger assurance SMS.",
+                "draft_reply_english": "Hi Rahul, please don't worry. If the amount was deducted and the bill wasn't paid, it is usually reversed by your bank within 48 hours. Please share your transaction UTR via DM so we can track it immediately.",
+                "draft_reply_hindi": "नमस्ते राहुल, कृपया चिंता न करें। यदि राशि कट गई है, तो यह आमतौर पर 48 घंटों में आपके बैंक द्वारा वापस कर दी जाती है। कृपया अपना UTR हमें DM करें।"
+            },
+            {
+                "id": 5,
+                "created_at": "2026-09-06T16:20:00Z",
+                "user_name": "Neha Gupta",
+                "review_text": "Wallet KYC is failing repeatedly for the last 3 days. 'Server timeout' error every time I upload my PAN card.",
+                "rating": 2,
+                "category": "Onboarding Drop-off",
+                "sub_category": "KYC API Timeout",
+                "urgency_score": 7.2,
+                "sentiment": "Frustrated",
+                "suggested_action": "Check CKYC/NSDL API gateway uptime. Route user to manual review queue.",
+                "draft_reply_english": "We apologize for the glitch, Neha. Our KYC partners are experiencing temporary downtime. We will notify you the moment the gateway is stable.",
+                "draft_reply_hindi": "असुविधा के लिए खेद है, नेहा। हमारे KYC पार्टनर सर्वर में अभी कुछ समस्या है। सर्वर ठीक होते ही हम आपको सूचित करेंगे।"
             }
         ]
 
@@ -197,7 +238,6 @@ if check_password():
                     if st.button("Approve & Post Draft to App Store", key=f"btn_en_{item.get('id')}"):
                         st.toast("🚀 Reply successfully routed and posted via API!")
                 
-                # Integrated Leftover Code
                 with tab_hi:
                     st.text_area("Review Response Text (Hi)", value=item.get('draft_reply_hindi'), key=f"hi_{item.get('id')}", height=70)
                     if st.button("Approve & Post Hindi Draft", key=f"btn_hi_{item.get('id')}"):
@@ -208,3 +248,11 @@ if check_password():
                 st.markdown(f"<h2 style='text-align: center;'>{item.get('urgency_score')}</h2>", unsafe_allow_html=True)
                 st.markdown("<p style='text-align: center; color: gray; font-size: 12px;'>Risk Priority Score</p>", unsafe_allow_html=True)
                 st.markdown(f"<h3 style='text-align: center;'>{alert_emoji}</h3>", unsafe_allow_html=True)
+                
+                # New Escalation Action Buttons
+                st.markdown("<br>", unsafe_allow_html=True)
+                if score >= 7.0:
+                    if st.button("🔔 Slack PR", key=f"slack_{item.get('id')}", use_container_width=True):
+                        send_slack_alert(item.get('id'), item.get('category'), item.get('review_text'))
+                    if st.button("📱 WA Escalate", key=f"wa_{item.get('id')}", use_container_width=True):
+                        send_whatsapp_alert(item.get('id'), score)
