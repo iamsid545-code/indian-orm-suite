@@ -1,0 +1,7 @@
+streamlit
+pandas
+requests
+google-genai
+pydantic
+google-play-scraper
+supabase
